@@ -16,8 +16,8 @@ def load_state(net, checkpoint):
 
 
 def load_from_mobilenet(net, checkpoint):
-    source_state = checkpoint['state_dict']
-    target_state = net.state_dict()
+    source_state = checkpoint['state_dict']#-------------------source is the checkpoint
+    target_state = net.state_dict()#---------------------------whole model is the target where we wanna move the wts of the checkpoint
     new_target_state = collections.OrderedDict()
     for target_key, target_value in target_state.items():
         k = target_key

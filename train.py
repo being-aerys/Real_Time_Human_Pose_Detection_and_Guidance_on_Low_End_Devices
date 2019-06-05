@@ -12,6 +12,8 @@ from datasets.coco import CocoTrainDataset
 from datasets.transformations import ConvertKeypoints, Scale, Rotate, CropPad, Flip
 from modules.get_parameters import get_parameters_conv, get_parameters_bn, get_parameters_conv_depthwise
 from models.with_mobilenet import PoseEstimationWithMobileNet
+#from models.new_architeture_with_mobilenet import PoseEstimationWithMobileNet#-----------------------------CHANGED HERE
+
 from modules.loss import l2_loss
 from modules.load_state import load_state, load_from_mobilenet
 from val import evaluate
@@ -23,7 +25,8 @@ cv2.ocl.setUseOpenCL(False)  # To prevent freeze of DataLoader
 def train(prepared_train_labels, train_images_folder, num_refinement_stages, base_lr, batch_size, batches_per_iter,
           num_workers, checkpoint_path, weights_only, from_mobilenet, checkpoints_folder, log_after,
           val_labels, val_images_folder, val_output_name, checkpoint_after, val_after):
-    net = PoseEstimationWithMobileNet(num_refinement_stages)
+
+    net = PoseEstimationWithMobileNet(num_refinement_stages)#---------------------------------for training, define a PoseEstimation model
 
     stride = 8
     sigma = 7
@@ -37,6 +40,10 @@ def train(prepared_train_labels, train_images_folder, num_refinement_stages, bas
                                    CropPad(pad=(128, 128, 128)),
                                    Flip()]))
     train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+
+    #If    you    need    to    move    a    model    to    GPU    via.cuda(), please    do    so   before
+    # constructing    optimizers    for it.Parameters of a model after.cuda() will be different objects with those before the call.
+
 
     optimizer = optim.Adam([
         {'params': get_parameters_conv(net.model, 'weight')},
@@ -57,23 +64,27 @@ def train(prepared_train_labels, train_images_folder, num_refinement_stages, bas
     num_iter = 0
     current_epoch = 0
     drop_after_epoch = [100, 200, 260]
+
+    #torch.optim.lr_scheduler provides several methods to adjust the learning rate based on the number of epochs. #------------------------VVI
+
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=drop_after_epoch, gamma=0.333)
-    if checkpoint_path:
-        checkpoint = torch.load(checkpoint_path)
+    if checkpoint_path:                             #--------check if the training needs to be continued from a certain pth checkpoint
+        checkpoint = torch.load(checkpoint_path)#-------------VVI: it can be wts for other parts along with the mobile net wts or only the mobilenet
 
         if from_mobilenet:
-            load_from_mobilenet(net, checkpoint)
+            load_from_mobilenet(net, checkpoint)#target, source
         else:
             load_state(net, checkpoint)
-            if not weights_only:
-                optimizer.load_state_dict(checkpoint['optimizer'])
-                scheduler.load_state_dict(checkpoint['scheduler'])
+            if not weights_only:#--------------------------------------If you want to load not only the weights but also other parameters
+                optimizer.load_state_dict(checkpoint['optimizer'])#-----------------when we save a model we save not only weights but also things like lr and thus
+                scheduler.load_state_dict(checkpoint['scheduler'])#-----------------we can load them like this
                 num_iter = checkpoint['iter']
                 current_epoch = checkpoint['current_epoch']
 
     net = DataParallel(net).cuda()
     net.train()
-    for epochId in range(current_epoch, 280):
+    for epochId in range(current_epoch, 280):#------------------------------------------------------training for only 280 epochs
+        print("This is Epoch No ",str(epochId))
         scheduler.step()
         total_losses = [0, 0] * (num_refinement_stages + 1)  # heatmaps loss, paf loss per stage
         batch_per_iter_idx = 0
@@ -81,12 +92,15 @@ def train(prepared_train_labels, train_images_folder, num_refinement_stages, bas
             if batch_per_iter_idx == 0:
                 optimizer.zero_grad()
 
+
             images = batch_data['image'].cuda()
             keypoint_masks = batch_data['keypoint_mask'].cuda()
             paf_masks = batch_data['paf_mask'].cuda()
             keypoint_maps = batch_data['keypoint_maps'].cuda()
             paf_maps = batch_data['paf_maps'].cuda()
-
+            # import time
+            # print(images.shape)
+            # time.sleep(222)
             stages_output = net(images)
 
             losses = []
@@ -118,7 +132,7 @@ def train(prepared_train_labels, train_images_folder, num_refinement_stages, bas
                 for loss_idx in range(len(total_losses)):
                     total_losses[loss_idx] = 0
             if num_iter % checkpoint_after == 0:
-                snapshot_name = '{}/checkpoint_iter_{}.pth'.format(checkpoints_folder, num_iter)
+                snapshot_name = '{}/checkpoint_iter_{}_after_37000.pth'.format(checkpoints_folder, num_iter)
                 torch.save({'state_dict': net.module.state_dict(),
                             'optimizer': optimizer.state_dict(),
                             'scheduler': scheduler.state_dict(),
@@ -133,12 +147,18 @@ def train(prepared_train_labels, train_images_folder, num_refinement_stages, bas
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--prepared-train-labels', type=str, required=True,
+    parser.add_argument('--prepared-train-labels', type=str, required=True,#------------this --means that it is the name of the string with which it will be called
                         help='path to the file with prepared annotations')
     parser.add_argument('--train-images-folder', type=str, required=True, help='path to COCO train images folder')
-    parser.add_argument('--num-refinement-stages', type=int, default=1, help='number of refinement stages')
+    parser.add_argument('--num-refinement-stages', type=int, default=1, help='number of refinement stages')#----------just 1 refinement stage by default
+
+
+
+
+
+
     parser.add_argument('--base-lr', type=float, default=4e-5, help='initial learning rate')
-    parser.add_argument('--batch-size', type=int, default=80, help='batch size')
+    parser.add_argument('--batch-size', type=int, default=5, help='batch size')#----------------------------------batch size reduced because cuda out of memory
     parser.add_argument('--batches-per-iter', type=int, default=1, help='number of batches to accumulate gradient from')
     parser.add_argument('--num-workers', type=int, default=8, help='number of workers')
     parser.add_argument('--checkpoint-path', type=str, required=True, help='path to the checkpoint to continue training from')

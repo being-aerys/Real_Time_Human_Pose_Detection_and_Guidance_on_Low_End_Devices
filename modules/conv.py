@@ -2,7 +2,7 @@ from torch import nn
 
 
 def conv(in_channels, out_channels, kernel_size=3, padding=1, bn=True, dilation=1, stride=1, relu=True, bias=True):
-    modules = [nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, bias=bias)]
+    modules = [nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, bias=bias)]#-----------------understand how dilation works
     if bn:
         modules.append(nn.BatchNorm2d(out_channels))
     if relu:

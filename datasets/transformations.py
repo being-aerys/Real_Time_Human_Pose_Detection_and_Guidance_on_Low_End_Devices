@@ -6,6 +6,10 @@ import numpy as np
 
 class ConvertKeypoints(object):
     def __call__(self, sample):
+        # if sample == None:
+        #     print("Sample is none!")
+        #     import time
+        #     time.sleep(2222)
         label = sample['label']
         h, w, _ = sample['image'].shape
         keypoints = label['keypoints']
