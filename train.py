@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
 
     parser.add_argument('--base-lr', type=float, default=4e-5, help='initial learning rate')
-    parser.add_argument('--batch-size', type=int, default=5, help='batch size')#----------------------------------batch size reduced because cuda out of memory
+    parser.add_argument('--batch-size', type=int, default=50, help='batch size')#----------------------------------batch size reduced because cuda out of memory
     parser.add_argument('--batches-per-iter', type=int, default=1, help='number of batches to accumulate gradient from')
     parser.add_argument('--num-workers', type=int, default=8, help='number of workers')
     parser.add_argument('--checkpoint-path', type=str, required=True, help='path to the checkpoint to continue training from')
