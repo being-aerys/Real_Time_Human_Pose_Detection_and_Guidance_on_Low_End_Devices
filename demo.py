@@ -126,7 +126,7 @@ def run_demo(net, image_provider, height_size, cpu, track_ids):
                             cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 255))
 
         # cv2.resize(img,(720,1280))
-        cv2.imshow('Lightweight Human Pose Estimation Python Demo', cv2.resize(img,(1400,900)))
+        cv2.imshow('Lightweight Human Pose Estimation Python Demo', cv2.resize(img,(2800,1800)))
         key = cv2.waitKey(33)
         if key == 27:  # esc
             return
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     parser.add_argument('--height-size', type=int, default=128, help='network input layer height size')
     parser.add_argument('--video', type=str, default='', help='path to video file or camera id')
     parser.add_argument('--images', nargs='+', default='', help='path to input image(s)')
-    parser.add_argument('--cpu', action='store_false', help='run network inference on cpu')#--------------store_true is befault false
+    parser.add_argument('--cpu', action='store_true', help='run network inference on cpu')#--------------store_true is befault false
     parser.add_argument('--track-ids', default=True, help='track poses ids')
     args = parser.parse_args()
 

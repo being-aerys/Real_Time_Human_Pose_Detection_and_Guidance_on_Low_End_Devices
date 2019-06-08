@@ -11,8 +11,8 @@ from torchvision import transforms
 from datasets.coco import CocoTrainDataset
 from datasets.transformations import ConvertKeypoints, Scale, Rotate, CropPad, Flip
 from modules.get_parameters import get_parameters_conv, get_parameters_bn, get_parameters_conv_depthwise
-from models.with_mobilenet import PoseEstimationWithMobileNet
-#from models.new_architeture_with_mobilenet import PoseEstimationWithMobileNet#-----------------------------CHANGED HERE
+#from models.with_mobilenet import PoseEstimationWithMobileNet
+from models.new_architeture_with_mobilenet import PoseEstimationWithMobileNet#-----------------------------CHANGED HERE
 
 from modules.loss import l2_loss
 from modules.load_state import load_state, load_from_mobilenet
